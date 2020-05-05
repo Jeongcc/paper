@@ -1,0 +1,220 @@
+import socket, traceback, threading, queue
+import time
+import os
+
+#initial number of worker threads
+kNumThreads = 10
+
+login_set = [('1234','1234'), ('default', '123'), ('user', 'hi')]
+login_list = {}
+
+HOST = input('address : ')
+PORT = 10089
+CLRF = '\r\n'
+
+class InvalidRequest(Exception):
+    pass
+
+class Request(object):
+    "A simple http request object"
+
+    def __init__(self, raw_request, ip):
+        self._raw_request = raw_request
+        self._ip = ip
+        self._method, self._path, self._protocol, self._headers, self._cookie = self.parse_request()
+        self._userid, self._password = self.parse_login()
+        #if '/secret.html' == self._path and self._userid != b'0'
+        self._login = self.login()
+
+    def parse_request(self):
+        temp = [i.strip() for i in self._raw_request.splitlines()]
+
+        if -1 == temp[0].find('HTTP'.encode()):
+            raise InvalidRequest('Incorrect Protocol')
+
+        method, path, protocol = [i.strip().decode() for i in temp[0].split()]
+        headers = {}
+        if 'GET' == method:
+            for k, v in [i.split(b':', 1) for i in temp[1:-1]]:
+                headers[k.strip().decode()] = v.strip().decode()
+        elif 'POST' == method:
+            for k, v in [i.split(b':', 1) for i in temp[1:-2]]:
+                headers[k.strip().decode()] = v.strip().decode()
+            self.query = temp[-1]
+
+        cookie = None
+        if 'Cookie' in headers:
+            cookie = {}
+            cookie['login_info'] = headers['Cookie'].split('&')[0]
+            cookie['login_info'] = cookie['login_info'].split('=')[1]
+            cookie['expire_date'] = headers['Cookie'].split('&')[1]
+        return method, path, protocol, headers, cookie
+
+    def parse_login(self):
+        if -1 != self._path.find('secret.html') :
+            if 'POST' == self._method: 
+                #index->secret POST된 경우에만 로그인 가능
+                if -1 != self.query.find(b'userid') :
+                    userid, password = self.query.split(b'&',1)
+                    userid = userid.split(b'=',1)[1]
+                    password = password.split(b'=',1)[1]
+                    return userid.decode(), password.decode()
+        userid=b'0'
+        password=b'0'
+        return userid.decode(), password.decode()
+
+    def login(self):
+        try :
+            login_set.index((self._userid, self._password))
+            return True
+        except : 
+            return False
+
+    def __repr__(self):
+        return repr({'method': self._method, 'path': self._path, 'protocol': self._protocol, 'headers': self._headers})
+        
+class Request_Handler:
+    def __init__(self):
+        # 생성자
+        return
+
+    def sockrecv(self, sock, clientaddr):
+        while True:
+            #REQEUST receive and Parse
+            try :
+                request = sock.recv(1024)
+            except :
+                traceback.print_exc()
+                
+            if request :
+                #print('request get : '+'name'+' '+'addr[0] : '+str(clientaddr))
+                request_parse = Request(request, clientaddr)
+                
+                print(clientaddr)
+                
+                access = True
+                cookie_id = cookie_expire_date = None
+
+                try :
+                    #path Valid
+                    path_dir = os.path.dirname(os.path.realpath(__file__))
+                    file_list = os.listdir(path_dir)
+                    file_list.append('')
+                    file_list.append('favicon.ico')
+                    file_list.append('cookie.html')
+                    file_list.index(request_parse._path.split('/',1)[1])
+                    
+                    index = ['/', '/favicon.ico', '/index.html']
+                    if request_parse._path in index:
+                        filename = path_dir +'/index.html'
+                        myfile = open(filename, "rb")
+                        self.response_content=myfile.read()
+
+                        length = len(self.response_content)
+                        
+                        self.response_header="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:"+str(length)+"\r\nConnection: Keep-Alive\r\n\n"
+
+                        self.response=self.response_header.encode()
+                        self.response+=self.response_content
+                        sock.send(self.response)
+                    else:
+                        access = True
+
+                        if request_parse._cookie:
+                            cookie_id = request_parse._cookie['login_info']
+                            cookie_expire_date = request_parse._cookie['expire_date']
+                        else:
+                            access = False
+                                
+                        if request_parse._path == '/cookie.html' :
+                            if access == True :
+                                self.response_content = "<!--DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN \" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd \" --> <html xmlns= \" http://www.w3.org/1999/xhtml \"> <head><meta http-equiv= \"Content-Type \" content= \"text/html; charset=iso-8859-1 \" /> <title> "
+                                self.response_content += cookie_id
+                                self.response_content += "</title> </head> <body>"
+                                end = time.mktime(time.strptime(cookie_expire_date, '%a, %d %b %Y %H:%M:%S'))
+                                cur = time.mktime(time.localtime())
+                                self.response_content += str((int)(end - cur))
+                                self.response_content += " seconds left until your cookie expires</body> </html> "
+
+                                length = len(self.response_content)
+                                self.response_header="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:"+str(length)+"\r\nConnection: Keep-Alive\r\n\n"
+
+                                self.response=self.response_header.encode()
+                                self.response+=self.response_content.encode()
+                                sock.send(self.response)
+                            else:
+                                # 추후수정
+                                self.response="HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\n\n"
+                                self.response+="<body>you can't access Login Again</body>"
+                                self.response=self.response.encode()
+                                sock.send(self.response)
+                        else :
+                            #해당 브라우저, ip의 login access 시간 전인 모든 커넥션, index->secret.html로 post되는 경우 아이디 비번이 맞을 경우
+                            if request_parse._login == True or access == True :
+                                length=0
+                                if request_parse._path.split('.',1)[1] == 'html' :
+                                    filename = path_dir + request_parse._path
+                                    myfile = open(filename, "rb")
+                                    self.response_content=myfile.read()
+                                    length = len(self.response_content)
+                                    if request_parse._login:
+                                        # 쿠키 설정
+                                        self.response_header = 'HTTP/1.1 200 OK\r\n'
+                                        current_date = time.strftime('%a, %d %b %Y %H:%M:%S', time.localtime()) 
+                                        self.response_header += 'Date: ' + current_date +'\r\n'
+                                        expire_date = time.strftime('%a, %d %b %Y %H:%M:%S', time.localtime(time.time()+30))
+                                        self.response_header += 'Set-Cookie: ' + 'login_info=' + request_parse._userid + '&' + expire_date;
+                                        self.response_header += '; Expires=' + expire_date + '\r\n'
+                                        self.response_header += 'Content-Length: ' + str(length) + '\r\nConnection: Keep-Alive\r\n\n'
+                                    else:
+                                        self.response_header="HTTP/1.1 200 OK\r\nContent-Type : text/html \r\nContent-Length:"+ str(length) + "\r\nConnection: Keep-Alive\r\n\n"
+
+                                    self.response=self.response_header.encode()
+
+                                    self.response+=self.response_content
+                                    sock.send(self.response)
+                                else :
+                                    filename = path_dir + request_parse._path
+                                    myfile = open(filename, "rb")
+                                    
+                                    self.response_content = myfile.read()
+                                    
+                                    length = len(self.response_content)
+                                    self.response_header="HTTP/1.1 200 OK\r\nContent-Type : text/html \r\nContent-Length:"+ str(length) + "\r\nConnection: Keep-Alive\r\n\n"
+                                    sock.send(self.response_header.encode() + self.response_content)
+                                    
+                            else :
+                                #해당 브라우저, ip의 login access 시간이 지났거나, 로그인이 안 되있을 경우
+                                self.response="HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\n\n"
+                                self.response+="<body>you can't access Login Again</body>"
+                                self.response=self.response.encode()
+                                sock.send(self.response)
+                #path is invalid
+                except :
+                    traceback.print_exc()
+                    self.response="HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nConnection: Keep-Alive\r\n\n"
+                    self.response+="<body>No file</body>"
+                    self.response=self.response.encode()
+                    sock.send(self.response)
+
+# Main
+request_handler = Request_Handler()
+
+# the actual server starts here
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+#s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+
+while True:
+    s.listen(10)
+    try:
+        sock, clientaddr = s.accept()
+    except:
+        traceback.print_exc()
+
+    try:
+        thread = threading.Thread(target = request_handler.sockrecv, args = (sock, clientaddr))
+        thread.start()
+    except:
+        traceback.print_exc()
