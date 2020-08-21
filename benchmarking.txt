@@ -1,0 +1,11 @@
+## Abstract
+
+세가지 RocksDB production use case로부터의 detailed characterization
+
+1. key and value size는 use case/application과 매우 연관되어 있다. (어떻게 연관되어 있을까?)
+2. key-value pair에 대한 access는 good locality를 가지고 있고, certain special pattern을 따른다. (access가 good locality를 가지고 있다는 건 어떤 의미일까? access가 비슷한 곳에 계속 접근한다는 의미인가? )
+3. collected performance metrics는 UDB에서 Strong diurnal pattern을 보이고 다른 두 (zippyDB와 UP2X)에서는 보이지 않는다. (이렇게 찾은 특징들을 어떻게 적용할까?)
+
+YCSB의 문제점 : Key-space locality에 대한 ignorance로 수집된 workload에 충분히 가깝지 않은 workload를 trigger한다.
+
+이 문제를 해결하기위해서, key-range based modeling을 제안하고, real-world key-value store의 workload를 더 잘 emulate할 수 있는 benchmark를 develop한다. 이 benchmark는 synthetically하게 더 정확한 key-value queries를 generate한다.
