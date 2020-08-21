@@ -1,0 +1,26 @@
+## 1. Introduction
+
+'**characterize, model, and benchmark workloads of RocksDB'** 을 하기 위해서 
+
+1. KV level query trace를 collect하고, trace를 replay하고, trace를 analyze해서 production에 사용될 수 있는 tool을 소개한다.
+2. KV worklaod과 application과의 correlation에 대한 더 나은 이해를 위해서, 3가지 RocksDB use case를 선택했다. UDB : as the storage engine of a SQL database, ZippyDB : as the storage engine of a distributed KV-store, UP2X : persistent storage for AI/ML service
+
+    [UDB]
+
+    Facebook의 social graph data를 위한 MySQL storage layer
+
+    social graph data는 MySQL table에 maintain된다. table row가 RocksDB의 KV pair로 store되어 있다. MySQL table에서 RocksDB KV pair로의 변환은 MyRocks에 의해 achieve된다.
+
+    [ZippyDB] 
+
+    data persistency와 reliablility를 achieve하기 위해 RocksDB를 storage node로 사용하는 distributed KV-store
+
+    ZippyDB는 주로 photo metadata와 같은 data와 object의 metadata를 storage에 store한다. 이 논문에서, ZippyDB의 workload는 Facebook의 object storage system의 metadata를 저장하는 shard로부터 collect되었다.
+
+    key는 주로 data block이나 ObjStorage file의 metadata를 contain하고, value는 상응하는 object 주소를 store한다.
+
+    [UP2X]
+
+    RocksDB를 기반으로 한 special distributed KV store이다. UP2X는 counters and statistics와 같은 profile data를 보관하고, 그 데이터들은 페이스북의 AI/ML 서비스의 prediction과 inferencing에 사용된다. 
+
+    그래서 UP2X의 KV pair는 빈번하게 update된다.
