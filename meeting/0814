@@ -1,0 +1,13 @@
+[Paper Reading Review]
+
+TRIAD: Creating Synergies Between Memory, Disk and Log in Log Structured Key-Value Stores
+https://www.usenix.org/conference/atc17/technical-sessions/presentation/balmau
+
+
+[To do]
+
+- make environment for experiment
+  : connect SSD / install RocksDB / network setting
+- Read 'Characterizing, Modeling, and Benchmarking RocksDB Key-Value Workloads at Facebook'
+  https://www.usenix.org/conference/fast20/presentation/cao-zhichao
+- Search 'Overlap ratio', 'Priority Option', 'Rate Limiter'
