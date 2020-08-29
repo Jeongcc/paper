@@ -1,0 +1,11 @@
+[Paper Reading Review]
+
+Characterizing, Modeling, and Benchmarking RocksDB Key-Value Workloads at Facebook
+https://www.usenix.org/conference/fast20/presentation/cao-zhichao
+
+
+[To do]
+
+- Study about 'Auto tuning, (rate limit)
+- Option of Compaction Priority -> summary in a line & find limitation or problem 
+- Read papers keywords : rocksdb, leveldb, key-value, lsm-tree (with short summarize) 
