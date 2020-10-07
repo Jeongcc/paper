@@ -1,0 +1,23 @@
+[Experiment Design Meeting]
+
+To experiment accurately for identifying compaction priority's action , decided to USE 'DB_BENCH'
+
+To compare how compaction priorities differently work, 
+
+WORKLOAD    GET:PUT   COMPACTIONPRIORITY  NUM       (write_buffer_size = 64MB)
+ZippyDB     1:9       1                   10000000
+ZippyDB     1:9       2                   10000000
+
+FILLRANDOM  0:10      1                   10000000
+FILLRANDOM  0:10      2                   10000000
+
+=> DIFFERENCE was quite small / SO decide to change write_buffer_size & NUm
+
+WORKLOAD    GET:PUT   COMPACTIONPRIORITY  NUM       (write_buffer_size = 16MB)
+ZippyDB     1:9       1                   100000000
+ZippyDB     1:9       2                   100000000
+
+FILLRANDOM  0:10      1                   100000000
+FILLRANDOM  0:10      2                   100000000
+
+=> Experiment is running, but MOUNT issue exists...
