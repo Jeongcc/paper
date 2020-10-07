@@ -1,0 +1,10 @@
+[Experiment Design for Paper]
+-to configure whether Compaction Priority well run as intended.
+
+First Experiment with YCSB
+-requested distribution : uniform , zipfian(1:9, 2:8)
+-change in get, put ratio & compaction priority
+
+Second Experiment with DB_BENCH
+-requested distribution : fillrandom, readrandom, mixgrapth(10:90, 90:10)
+-change in compaction priority
