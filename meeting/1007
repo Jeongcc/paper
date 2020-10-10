@@ -1,0 +1,12 @@
+[Experiment Result]
+
+10GB -> 100GB (10GB is too small to show difference between priority)
+change in key size (16 -> 32 but return 16 again in next experiment)
+
+1) fillrandom, compaction priority 1, write only
+2) fillrandom, compaction priority 2, write only
+3) mixgraph, compaction priority 1, write intensive
+4) mixgraph, compaction priority 2, write intensive
+
+1)2) result shows as expected. But from result of 3)4), figured out QPS's effect to throughput 
+so decided to run next experiment with QPS default or MAX or without throuput
