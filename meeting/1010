@@ -1,0 +1,18 @@
+[Experiment]
+''compaction priority 1''
+1-fillrandom
+2-readrandom, use existing db
+3-mixgraph, read intensive, use existing db
+4-mixgraph, write intensive, use existing db
+
+''compaction priority 2''
+1-fillrandom
+2-readrandom, use existing db
+3-mixgraph, read intensive, use existing db
+4-mixgraph, write intensive, use existing db
+
+
+[Experimental Result]
+result between 1-1, 1-2 is opposite, need reexperiment
+I suspect that ssd format issue, key size issue, or unknown dbbench process issue would be cause
+So, ssd status check under each experiment and process check is needed
