@@ -1,0 +1,7 @@
+[Experiment Progress]
+
+read_random_exp_range 0->10 : skewness 가 올라감
+
+try
+
+read_random_exp_range 0->-10 : skewness 가 올라감
