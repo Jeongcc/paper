@@ -1,7 +1,0 @@
-#!/bin/bash
-
-git add .
-git commit -m "organize"
-git push ubuntu master
-
-#git remote add origin https://github.com/Jeongcc/paper
